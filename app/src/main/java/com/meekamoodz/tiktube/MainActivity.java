@@ -561,7 +561,7 @@ public class MainActivity extends Activity {
 
     private void loadAppOpenAd() {
         if (!adsInitialized) return;
-        AppOpenAd.load(this, APP_OPEN_ID, new AdRequest.Builder().build(), new com.google.android.gms.ads.appopen.AppOpenAdLoadCallback() {
+        AppOpenAd.load(this, APP_OPEN_ID, new AdRequest.Builder().build(), new AppOpenAd.AppOpenAdLoadCallback() {
             @Override
             public void onAdLoaded(@NonNull AppOpenAd ad) {
                 appOpenAd = ad;
