@@ -14,10 +14,12 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -62,6 +64,7 @@ public class MainActivity extends Activity {
     private static final long APP_OPEN_COOLDOWN_MS = 4L * 60L * 60L * 1000L;
 
     private EditText linkInput;
+    private Spinner qualitySpinner;
     private TextView status;
     private Button downloadButton;
     private LinearLayout contentContainer;
@@ -78,6 +81,7 @@ public class MainActivity extends Activity {
     private boolean appOpenShownThisResume = false;
     private boolean appOpenEligible = false;
     private String pendingDownloadUrl = null;
+    private String pendingDownloadFormat = null;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable adTimeoutRunnable = () -> {
         if (waitingForInterstitial && !interstitialGateResolved) {
@@ -194,19 +198,10 @@ public class MainActivity extends Activity {
         page.addView(contentContainer, new LinearLayout.LayoutParams(-1, -2));
         showDownloader();
 
-        LinearLayout footer = new LinearLayout(this);
-        footer.setOrientation(LinearLayout.HORIZONTAL);
-        footer.setGravity(Gravity.CENTER);
         Button privacy = actionButton("Privacy Policy", false);
-        Button consent = actionButton("Ad Privacy Settings", false);
-        footer.addView(privacy, new LinearLayout.LayoutParams(0, dp(42), 1f));
-        LinearLayout.LayoutParams consentParams = new LinearLayout.LayoutParams(0, dp(42), 1f);
-        consentParams.leftMargin = dp(8);
-        footer.addView(consent, consentParams);
         privacy.setOnClickListener(v -> openPrivacyPolicy());
-        consent.setOnClickListener(v -> showAdPrivacyOptions());
         addSpace(page, 18);
-        page.addView(footer);
+        page.addView(privacy, new LinearLayout.LayoutParams(-1, dp(42)));
 
         bannerAdView = new AdView(this);
         bannerAdView.setAdUnitId(BANNER_ID);
@@ -241,6 +236,37 @@ public class MainActivity extends Activity {
         linkInput.setPadding(dp(14), dp(12), dp(14), dp(12));
         linkInput.setBackground(rounded(Color.rgb(15, 22, 41), 12));
         card.addView(linkInput, new LinearLayout.LayoutParams(-1, -2));
+
+        addSpace(card, 14);
+        card.addView(label("DOWNLOAD QUALITY", 12, Color.rgb(160, 174, 201), true));
+        addSpace(card, 6);
+        qualitySpinner = new Spinner(this);
+        String[] qualityOptions = new String[]{"Best available", "1080p (Full HD)", "720p (HD)", "480p (SD)", "360p (Low data)"};
+        ArrayAdapter<String> qualityAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, qualityOptions) {
+            @Override
+            public View getView(int position, View convertView, android.view.ViewGroup parent) {
+                TextView view = (TextView) super.getView(position, convertView, parent);
+                view.setTextColor(Color.WHITE);
+                view.setTextSize(15);
+                view.setPadding(dp(14), dp(10), dp(14), dp(10));
+                return view;
+            }
+
+            @Override
+            public View getDropDownView(int position, View convertView, android.view.ViewGroup parent) {
+                TextView view = (TextView) super.getDropDownView(position, convertView, parent);
+                view.setTextColor(Color.WHITE);
+                view.setTextSize(15);
+                view.setPadding(dp(14), dp(12), dp(14), dp(12));
+                view.setBackgroundColor(Color.rgb(26, 34, 57));
+                return view;
+            }
+        };
+        qualityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        qualitySpinner.setAdapter(qualityAdapter);
+        qualitySpinner.setSelection(0);
+        qualitySpinner.setBackground(rounded(Color.rgb(15, 22, 41), 12));
+        card.addView(qualitySpinner, new LinearLayout.LayoutParams(-1, dp(48)));
 
         addSpace(card, 14);
         downloadButton = actionButton("DOWNLOAD VIDEO", true);
@@ -378,6 +404,7 @@ public class MainActivity extends Activity {
         }
 
         pendingDownloadUrl = url;
+        pendingDownloadFormat = selectedFormat();
         waitingForInterstitial = true;
         interstitialGateResolved = false;
         downloadButton.setEnabled(false);
@@ -445,11 +472,29 @@ public class MainActivity extends Activity {
         waitingForInterstitial = false;
         handler.removeCallbacks(adTimeoutRunnable);
         String url = pendingDownloadUrl;
+        String format = pendingDownloadFormat;
         pendingDownloadUrl = null;
-        if (url != null) startDownloadActual(url);
+        pendingDownloadFormat = null;
+        if (url != null) startDownloadActual(url, format);
     }
 
-    private void startDownloadActual(final String url) {
+    private String selectedFormat() {
+        int selected = qualitySpinner == null ? 0 : qualitySpinner.getSelectedItemPosition();
+        switch (selected) {
+            case 1:
+                return "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best[height<=1080]/best";
+            case 2:
+                return "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best[height<=720]/best";
+            case 3:
+                return "bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480][ext=mp4]/best[height<=480]/best";
+            case 4:
+                return "bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/best[height<=360][ext=mp4]/best[height<=360]/best";
+            default:
+                return "best[ext=mp4]/bestvideo+bestaudio/best";
+        }
+    }
+
+    private void startDownloadActual(final String url, final String format) {
         if (downloading) return;
         final File folder = downloadsFolder();
         if (!folder.exists() && !folder.mkdirs()) {
@@ -472,7 +517,7 @@ public class MainActivity extends Activity {
                 YoutubeDLRequest request = new YoutubeDLRequest(url);
                 request.addOption("--no-playlist");
                 request.addOption("--no-mtime");
-                request.addOption("-f", "best[ext=mp4]/best");
+                request.addOption("-f", format == null ? "best[ext=mp4]/best" : format);
                 request.addOption("--merge-output-format", "mp4");
                 request.addOption("-o", new File(folder, "%(title).80s.%(ext)s").getAbsolutePath());
 
