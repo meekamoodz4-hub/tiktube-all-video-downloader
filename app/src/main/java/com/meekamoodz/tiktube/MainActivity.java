@@ -175,7 +175,7 @@ public class MainActivity extends Activity {
                 request.addOption("--merge-output-format", "mp4");
                 request.addOption("-o", new File(folder, "%(title).80s.%(ext)s").getAbsolutePath());
 
-                YoutubeDL.getInstance().execute(request, (progress, etaInSeconds) -> {
+                YoutubeDL.getInstance().execute(request, null, (progress, etaInSeconds) -> {
                     runOnUiThread(() -> status.setText("Downloading: " + Math.max(0, Math.min(100, Math.round(progress))) + "%\nEstimated time left: " + etaInSeconds + " seconds"));
                 });
 
