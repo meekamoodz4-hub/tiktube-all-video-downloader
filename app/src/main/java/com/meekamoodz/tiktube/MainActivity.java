@@ -16,11 +16,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.yausername.youtubedl_android.YoutubeDL;
-import com.yausername.youtubedl_android.YoutubeDLException;
 import com.yausername.youtubedl_android.YoutubeDLRequest;
 import com.yausername.ffmpeg.FFmpeg;
 
 import java.io.File;
+
+import kotlin.Unit;
 
 public class MainActivity extends Activity {
     private EditText linkInput;
@@ -175,8 +176,9 @@ public class MainActivity extends Activity {
                 request.addOption("--merge-output-format", "mp4");
                 request.addOption("-o", new File(folder, "%(title).80s.%(ext)s").getAbsolutePath());
 
-                YoutubeDL.getInstance().execute(request, null, (progress, etaInSeconds) -> {
-                    runOnUiThread(() -> status.setText("Downloading: " + Math.max(0, Math.min(100, Math.round(progress))) + "%\nEstimated time left: " + etaInSeconds + " seconds"));
+                YoutubeDL.getInstance().execute(request, "TiktubeDownload", (progress, etaInSeconds, line) -> {
+                    runOnUiThread(() -> status.setText("Downloading: " + Math.max(0, Math.min(100, Math.round(progress))) + "%\n" + line + "\nEstimated time left: " + etaInSeconds + " seconds"));
+                    return Unit.INSTANCE;
                 });
 
                 runOnUiThread(() -> {
