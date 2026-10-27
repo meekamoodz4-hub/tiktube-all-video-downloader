@@ -4,14 +4,14 @@ plugins {
 
 android {
     namespace 'com.meekamoodz.tiktube'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId 'com.meekamoodz.tiktube'
         minSdk 24
-        targetSdk 35
-        versionCode 2
-        versionName '1.1'
+        targetSdk 36
+        versionCode 3
+        versionName '1.2'
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
         }
@@ -35,4 +35,7 @@ android {
 dependencies {
     implementation 'io.github.junkfood02.youtubedl-android:library:0.18.1'
     implementation 'io.github.junkfood02.youtubedl-android:ffmpeg:0.18.1'
+    implementation 'com.google.android.gms:play-services-ads:25.5.0'
+    implementation 'com.google.android.ump:user-messaging-platform:3.2.0'
+    implementation 'androidx.core:core:1.15.0'
 }

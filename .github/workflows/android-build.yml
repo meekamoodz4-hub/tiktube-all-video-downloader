@@ -1,4 +1,4 @@
-name: Android APK Build
+name: Android Build (APK and Play Store Bundle)
 
 on:
   push:
@@ -24,18 +24,23 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
+          gradle-version: '8.11.1'
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: platform-tools platforms;android-35 build-tools;35.0.0
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
 
-      - name: Build debug APK
+      - name: Build debug APK for phone testing
         run: gradle assembleDebug
 
-      - name: Upload APK
+      - name: Build release App Bundle (unsigned)
+        run: gradle bundleRelease
+
+      - name: Upload APK and App Bundle
         uses: actions/upload-artifact@v4
         with:
-          name: tiktube-all-video-downloader-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: tiktube-release-candidate
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/bundle/release/app-release.aab
