@@ -322,8 +322,13 @@ public class MainActivity extends Activity {
     private void populateDownloads(LinearLayout list) {
         list.removeAllViews();
         File folder = downloadsFolder();
-        File[] found = folder.listFiles(file -> file.isFile() && isVideoFile(file.getName()));
-        if (found == null || found.length == 0) {
+        File downloadsRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        List<File> allFound = new ArrayList<>();
+        File[] inAppFolder = folder.listFiles(file -> file.isFile() && isVideoFile(file.getName()));
+        if (inAppFolder != null) allFound.addAll(Arrays.asList(inAppFolder));
+        File[] inDownloadsRoot = downloadsRoot.listFiles(file -> file.isFile() && isVideoFile(file.getName()));
+        if (inDownloadsRoot != null) allFound.addAll(Arrays.asList(inDownloadsRoot));
+        if (allFound.isEmpty()) {
             TextView empty = label("No downloaded videos found yet. Download a video first, then tap Refresh.", 14, Color.rgb(190, 199, 219), false);
             empty.setPadding(dp(16), dp(18), dp(16), dp(18));
             empty.setBackground(rounded(Color.rgb(26, 34, 57), 16));
@@ -331,7 +336,16 @@ public class MainActivity extends Activity {
             return;
         }
 
-        List<File> files = new ArrayList<>(Arrays.asList(found));
+        List<File> files = new ArrayList<>();
+        Set<String> seenPaths = new HashSet<>();
+        for (File file : allFound) {
+            try {
+                String path = file.getCanonicalPath();
+                if (seenPaths.add(path)) files.add(file);
+            } catch (Exception ignored) {
+                if (!files.contains(file)) files.add(file);
+            }
+        }
         Collections.sort(files, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
         for (File file : files) {
             LinearLayout row = new LinearLayout(this);
@@ -482,15 +496,15 @@ public class MainActivity extends Activity {
         int selected = qualitySpinner == null ? 0 : qualitySpinner.getSelectedItemPosition();
         switch (selected) {
             case 1:
-                return "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best[height<=1080]/best";
+                return "best[height<=1080][ext=mp4]/best[height<=1080]/best";
             case 2:
-                return "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best[height<=720]/best";
+                return "best[height<=720][ext=mp4]/best[height<=720]/best";
             case 3:
-                return "bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480][ext=mp4]/best[height<=480]/best";
+                return "best[height<=480][ext=mp4]/best[height<=480]/best";
             case 4:
-                return "bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/best[height<=360][ext=mp4]/best[height<=360]/best";
+                return "best[height<=360][ext=mp4]/best[height<=360]/best";
             default:
-                return "best[ext=mp4]/bestvideo+bestaudio/best";
+                return "best[ext=mp4]/best";
         }
     }
 
@@ -552,7 +566,9 @@ public class MainActivity extends Activity {
                     Toast.makeText(MainActivity.this, "Download complete!", Toast.LENGTH_LONG).show();
                 });
             } catch (Exception e) {
-                final String message = e.getMessage() == null ? "This link could not be downloaded." : e.getMessage();
+                final String message = e.getMessage() == null || e.getMessage().trim().isEmpty()
+                        ? e.getClass().getSimpleName() + ". Check the link, internet connection, and available storage."
+                        : e.getMessage();
                 runOnUiThread(() -> {
                     if (status != null) status.setText("Download failed. The link may be private, unsupported, or blocked by the platform. Details: " + message);
                 });
