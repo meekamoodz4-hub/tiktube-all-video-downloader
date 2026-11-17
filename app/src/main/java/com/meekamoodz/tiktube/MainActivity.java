@@ -63,6 +63,7 @@ public class MainActivity extends Activity {
     private static final long AD_WAIT_TIMEOUT_MS = 5000L;
     private static final long APP_OPEN_COOLDOWN_MS = 4L * 60L * 60L * 1000L;
 
+    private String selectedPlatform = "";
     private EditText linkInput;
     private Spinner qualitySpinner;
     private TextView status;
