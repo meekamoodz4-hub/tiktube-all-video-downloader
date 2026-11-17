@@ -62,6 +62,7 @@ public class MainActivity extends Activity {
     private static final String APP_OPEN_ID = "ca-app-pub-1083885756946416/1130416042";
     private static final long AD_WAIT_TIMEOUT_MS = 5000L;
     private static final long APP_OPEN_COOLDOWN_MS = 4L * 60L * 60L * 1000L;
+    private static final long DOWNLOADER_UPDATE_CHECK_INTERVAL_MS = 24L * 60L * 60L * 1000L;
 
     private String selectedPlatform = "";
     private EditText linkInput;
@@ -155,6 +156,7 @@ public class MainActivity extends Activity {
 
         showSplash();
         handler.postDelayed(() -> { buildInterface(); handleIncomingIntent(getIntent()); }, 1500L);
+        handler.postDelayed(this::checkForDownloaderUpdateAutomatically, 2000L);
         initializeConsentAndAds();
     }
 
@@ -192,7 +194,6 @@ public class MainActivity extends Activity {
         addPlatformTile(page,"◎","Instagram","Reels and public media where permitted",Color.rgb(221,119,226));
         addPlatformTile(page,"f","Facebook","Public videos where permitted",Color.rgb(91,153,255));
         addSpace(page,12); Button library=actionButton("▣   MY DOWNLOADS",false); page.addView(library,new LinearLayout.LayoutParams(-1,dp(50))); library.setOnClickListener(v->showDownloads());
-        addSpace(page,9); Button updateEngine=actionButton("↻   UPDATE DOWNLOADER",false); page.addView(updateEngine,new LinearLayout.LayoutParams(-1,dp(46))); updateEngine.setOnClickListener(v->updateDownloaderEngine());
         addSpace(page,9); Button privacy=actionButton("PRIVACY POLICY",false); page.addView(privacy,new LinearLayout.LayoutParams(-1,dp(44))); privacy.setOnClickListener(v->openPrivacyPolicy());
         bannerAdView=new AdView(this); bannerAdView.setAdUnitId(BANNER_ID); bannerAdView.setAdSize(AdSize.BANNER); root.addView(bannerAdView,new LinearLayout.LayoutParams(-1,-2)); setContentView(root);
     }
@@ -390,6 +391,10 @@ public class MainActivity extends Activity {
 
     private void requestDownload() {
         if (downloading || waitingForInterstitial) return;
+        if (updatingDownloader) {
+            Toast.makeText(this, "The downloader is updating. Please wait a moment.", Toast.LENGTH_SHORT).show();
+            return;
+        }
         final String url = linkInput == null ? "" : linkInput.getText().toString().trim();
         if (!(url.startsWith("https://") || url.startsWith("http://"))) {
             Toast.makeText(this, "Please paste a valid video link beginning with http:// or https://.", Toast.LENGTH_LONG).show();
@@ -652,40 +657,28 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void updateDownloaderEngine() {
-        if (!engineReady) {
-            Toast.makeText(this, "Downloader is not ready. Please restart the app and try again.", Toast.LENGTH_LONG).show();
-            return;
-        }
-        if (updatingDownloader || downloading) {
-            Toast.makeText(this, "Please wait until the current operation finishes.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+    private void checkForDownloaderUpdateAutomatically() {
+        if (!engineReady || updatingDownloader || downloading) return;
+
+        SharedPreferences prefs = getSharedPreferences("tiktube_downloader", MODE_PRIVATE);
+        long lastCheck = prefs.getLong("last_update_check", 0L);
+        long now = System.currentTimeMillis();
+        if (now - lastCheck < DOWNLOADER_UPDATE_CHECK_INTERVAL_MS) return;
+
+        // Record the attempt first so a failed network check does not repeat on every launch.
+        prefs.edit().putLong("last_update_check", now).apply();
         updatingDownloader = true;
-        Toast.makeText(this, "Checking for the latest stable downloader update…", Toast.LENGTH_LONG).show();
+
         new Thread(() -> {
             try {
-                YoutubeDL.UpdateStatus result = YoutubeDL.getInstance().updateYoutubeDL(
+                YoutubeDL.getInstance().updateYoutubeDL(
                         getApplicationContext(), YoutubeDL.UpdateChannel._STABLE);
-                String installedVersion = YoutubeDL.getInstance().versionName(getApplicationContext());
-                runOnUiThread(() -> {
-                    updatingDownloader = false;
-                    if (result == YoutubeDL.UpdateStatus.DONE) {
-                        Toast.makeText(this, "Downloader updated successfully: " + installedVersion, Toast.LENGTH_LONG).show();
-                    } else if (result == YoutubeDL.UpdateStatus.ALREADY_UP_TO_DATE) {
-                        Toast.makeText(this, "Downloader is already up to date: " + installedVersion, Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(this, "Downloader update status: " + result, Toast.LENGTH_LONG).show();
-                    }
-                });
-            } catch (Exception e) {
-                runOnUiThread(() -> {
-                    updatingDownloader = false;
-                    String detail = e.getMessage() == null ? "Please check your internet connection and try again." : e.getMessage();
-                    Toast.makeText(this, "Could not update downloader: " + detail, Toast.LENGTH_LONG).show();
-                });
+            } catch (Exception ignored) {
+                // Keep the currently installed downloader; try again at the next scheduled check.
+            } finally {
+                updatingDownloader = false;
             }
-        }, "Tiktube-Downloader-Update").start();
+        }, "Tiktube-Auto-Downloader-Update").start();
     }
 
     private void openPrivacyPolicy() {
