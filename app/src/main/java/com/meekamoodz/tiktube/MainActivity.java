@@ -175,7 +175,7 @@ public class MainActivity extends Activity {
     private void buildInterface() {
         LinearLayout root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(Color.rgb(10,13,27));
         ScrollView scroll=new ScrollView(this); LinearLayout page=new LinearLayout(this); page.setOrientation(LinearLayout.VERTICAL);
-        page.setPadding(dp(20),dp(22),dp(20),dp(22)); scroll.addView(page); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1f));
+        page.setPadding(dp(20),dp(22),dp(20),dp(22)); contentContainer=page; scroll.addView(page); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1f));
         LinearLayout brand=new LinearLayout(this); brand.setGravity(Gravity.CENTER_VERTICAL);
         brand.addView(label("TIKTUBE",28,Color.WHITE,true),new LinearLayout.LayoutParams(0,-2,1f));
         brand.addView(label("✦ PREMIUM VIDEO TOOLS",10,Color.rgb(116,244,221),true)); page.addView(brand);
@@ -241,6 +241,10 @@ public class MainActivity extends Activity {
     private void showDownloads() {
         if (contentContainer == null) return;
         contentContainer.removeAllViews();
+        Button backHome = actionButton("‹   BACK TO PLATFORMS", false);
+        contentContainer.addView(backHome, new LinearLayout.LayoutParams(-1, dp(44)));
+        backHome.setOnClickListener(v -> buildInterface());
+        addSpace(contentContainer, 16);
 
         LinearLayout titleRow = new LinearLayout(this);
         titleRow.setGravity(Gravity.CENTER_VERTICAL);
