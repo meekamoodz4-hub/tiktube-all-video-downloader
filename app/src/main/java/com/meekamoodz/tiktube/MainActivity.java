@@ -151,151 +151,92 @@ public class MainActivity extends Activity {
             engineReady = false;
         }
 
-        buildInterface();
-        handleIncomingIntent(getIntent());
+        showSplash();
+        handler.postDelayed(() -> { buildInterface(); handleIncomingIntent(getIntent()); }, 1500L);
         initializeConsentAndAds();
     }
 
+    private void showSplash() {
+        LinearLayout splash = new LinearLayout(this);
+        splash.setOrientation(LinearLayout.VERTICAL); splash.setGravity(Gravity.CENTER);
+        splash.setPadding(dp(24),dp(24),dp(24),dp(24));
+        splash.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{Color.rgb(55,32,112),Color.rgb(10,13,27),Color.rgb(8,42,62)}));
+        TextView logo=label("▶",58,Color.rgb(116,244,221),true); logo.setGravity(Gravity.CENTER);
+        GradientDrawable orb=new GradientDrawable(); orb.setShape(GradientDrawable.OVAL); orb.setColor(Color.rgb(31,47,79)); orb.setStroke(dp(2),Color.rgb(116,244,221));
+        logo.setBackground(orb); splash.addView(logo,new LinearLayout.LayoutParams(dp(112),dp(112)));
+        TextView name=label("TIKTUBE",32,Color.WHITE,true); name.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams np=new LinearLayout.LayoutParams(-1,-2); np.topMargin=dp(20); splash.addView(name,np);
+        TextView tag=label("YOUR VIDEO TOOLKIT",12,Color.rgb(116,244,221),true); tag.setGravity(Gravity.CENTER);
+        splash.addView(tag); TextView loading=label("Getting everything ready…",13,Color.LTGRAY,false); loading.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2); lp.topMargin=dp(48); splash.addView(loading,lp); setContentView(splash);
+    }
+
     private void buildInterface() {
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.rgb(13, 18, 35));
-
-        ScrollView scroll = new ScrollView(this);
-        scroll.setFillViewport(true);
-        LinearLayout page = new LinearLayout(this);
-        page.setOrientation(LinearLayout.VERTICAL);
-        page.setPadding(dp(20), dp(22), dp(20), dp(22));
-        scroll.addView(page, new ScrollView.LayoutParams(-1, -2));
-        root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1f));
-
-        LinearLayout brandRow = new LinearLayout(this);
-        brandRow.setGravity(Gravity.CENTER_VERTICAL);
-        brandRow.setOrientation(LinearLayout.HORIZONTAL);
-        TextView brand = label("TIKTUBE", 28, Color.WHITE, true);
-        brandRow.addView(brand, new LinearLayout.LayoutParams(0, -2, 1f));
-        brandRow.addView(label("VIDEO TOOLKIT", 10, Color.rgb(91, 213, 190), true));
-        page.addView(brandRow);
-        addSpace(page, 4);
-        page.addView(label("ALL VIDEO DOWNLOADER", 12, Color.rgb(91, 213, 190), true));
-        addSpace(page, 18);
-
-        LinearLayout nav = new LinearLayout(this);
-        nav.setOrientation(LinearLayout.HORIZONTAL);
-        Button home = actionButton("Downloader", true);
-        Button library = actionButton("My Downloads", false);
-        nav.addView(home, new LinearLayout.LayoutParams(0, dp(46), 1f));
-        LinearLayout.LayoutParams libParams = new LinearLayout.LayoutParams(0, dp(46), 1f);
-        libParams.leftMargin = dp(10);
-        nav.addView(library, libParams);
-        page.addView(nav);
-        home.setOnClickListener(v -> showDownloader());
-        library.setOnClickListener(v -> showDownloads());
-        addSpace(page, 18);
-
-        contentContainer = new LinearLayout(this);
-        contentContainer.setOrientation(LinearLayout.VERTICAL);
-        page.addView(contentContainer, new LinearLayout.LayoutParams(-1, -2));
-        showDownloader();
-
-        Button privacy = actionButton("Privacy Policy", false);
-        privacy.setOnClickListener(v -> openPrivacyPolicy());
-        addSpace(page, 18);
-        page.addView(privacy, new LinearLayout.LayoutParams(-1, dp(42)));
-
-        bannerAdView = new AdView(this);
-        bannerAdView.setAdUnitId(BANNER_ID);
-        bannerAdView.setAdSize(AdSize.BANNER);
-        bannerAdView.setBackgroundColor(Color.rgb(13, 18, 35));
-        root.addView(bannerAdView, new LinearLayout.LayoutParams(-1, -2));
-        setContentView(root);
+        LinearLayout root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(Color.rgb(10,13,27));
+        ScrollView scroll=new ScrollView(this); LinearLayout page=new LinearLayout(this); page.setOrientation(LinearLayout.VERTICAL);
+        page.setPadding(dp(20),dp(22),dp(20),dp(22)); scroll.addView(page); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1f));
+        LinearLayout brand=new LinearLayout(this); brand.setGravity(Gravity.CENTER_VERTICAL);
+        brand.addView(label("TIKTUBE",28,Color.WHITE,true),new LinearLayout.LayoutParams(0,-2,1f));
+        brand.addView(label("✦ PREMIUM VIDEO TOOLS",10,Color.rgb(116,244,221),true)); page.addView(brand);
+        addSpace(page,5); page.addView(label("DOWNLOAD YOUR WAY",12,Color.rgb(163,145,255),true)); addSpace(page,18);
+        LinearLayout hero=new LinearLayout(this); hero.setOrientation(LinearLayout.VERTICAL); hero.setPadding(dp(19),dp(19),dp(19),dp(19));
+        GradientDrawable hg=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{Color.rgb(62,42,119),Color.rgb(24,54,88)}); hg.setCornerRadius(dp(22)); hero.setBackground(hg);
+        hero.addView(label("Your videos. Your library.",22,Color.WHITE,true)); addSpace(hero,7);
+        hero.addView(label("Choose a platform to open its own link screen. Paste, clear and manage your downloads in seconds.",14,Color.rgb(222,225,245),false));
+        page.addView(hero); addSpace(page,22); page.addView(label("CHOOSE A PLATFORM",12,Color.rgb(165,176,205),true)); addSpace(page,10);
+        addPlatformTile(page,"♪","TikTok","Short-form videos",Color.rgb(255,92,143));
+        addPlatformTile(page,"▶","YouTube","Videos you are permitted to save",Color.rgb(255,83,83));
+        addPlatformTile(page,"◎","Instagram","Reels and public media where permitted",Color.rgb(221,119,226));
+        addPlatformTile(page,"f","Facebook","Public videos where permitted",Color.rgb(91,153,255));
+        addSpace(page,12); Button library=actionButton("▣   MY DOWNLOADS",false); page.addView(library,new LinearLayout.LayoutParams(-1,dp(50))); library.setOnClickListener(v->showDownloads());
+        addSpace(page,9); Button privacy=actionButton("PRIVACY POLICY",false); page.addView(privacy,new LinearLayout.LayoutParams(-1,dp(44))); privacy.setOnClickListener(v->openPrivacyPolicy());
+        bannerAdView=new AdView(this); bannerAdView.setAdUnitId(BANNER_ID); bannerAdView.setAdSize(AdSize.BANNER); root.addView(bannerAdView,new LinearLayout.LayoutParams(-1,-2)); setContentView(root);
     }
 
-    private void showDownloader() {
-        if (contentContainer == null) return;
-        contentContainer.removeAllViews();
-
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(18), dp(20), dp(18), dp(20));
-        card.setBackground(rounded(Color.rgb(26, 34, 57), 20));
-        contentContainer.addView(card, new LinearLayout.LayoutParams(-1, -2));
-
-        card.addView(label("Download a video", 22, Color.WHITE, true));
-        addSpace(card, 8);
-        card.addView(label("Paste a video link or share a link from another app. Downloads are saved to your Download/TikTube folder.", 14, Color.rgb(190, 199, 219), false));
-        addSpace(card, 16);
-
-        linkInput = new EditText(this);
-        linkInput.setSingleLine(false);
-        linkInput.setMinLines(2);
-        linkInput.setTextSize(15);
-        linkInput.setHint("Paste TikTok, Instagram, Facebook or YouTube URL");
-        linkInput.setHintTextColor(Color.rgb(130, 143, 167));
-        linkInput.setTextColor(Color.WHITE);
-        linkInput.setPadding(dp(14), dp(12), dp(14), dp(12));
-        linkInput.setBackground(rounded(Color.rgb(15, 22, 41), 12));
-        card.addView(linkInput, new LinearLayout.LayoutParams(-1, -2));
-
-        addSpace(card, 14);
-        card.addView(label("DOWNLOAD QUALITY", 12, Color.rgb(160, 174, 201), true));
-        addSpace(card, 6);
-        qualitySpinner = new Spinner(this);
-        String[] qualityOptions = new String[]{"Best available", "1080p (Full HD)", "720p (HD)", "480p (SD)", "360p (Low data)"};
-        ArrayAdapter<String> qualityAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, qualityOptions) {
-            @Override
-            public View getView(int position, View convertView, android.view.ViewGroup parent) {
-                TextView view = (TextView) super.getView(position, convertView, parent);
-                view.setTextColor(Color.WHITE);
-                view.setTextSize(15);
-                view.setPadding(dp(14), dp(10), dp(14), dp(10));
-                return view;
-            }
-
-            @Override
-            public View getDropDownView(int position, View convertView, android.view.ViewGroup parent) {
-                TextView view = (TextView) super.getDropDownView(position, convertView, parent);
-                view.setTextColor(Color.WHITE);
-                view.setTextSize(15);
-                view.setPadding(dp(14), dp(12), dp(14), dp(12));
-                view.setBackgroundColor(Color.rgb(26, 34, 57));
-                return view;
-            }
-        };
-        qualityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        qualitySpinner.setAdapter(qualityAdapter);
-        qualitySpinner.setSelection(0);
-        qualitySpinner.setBackground(rounded(Color.rgb(15, 22, 41), 12));
-        card.addView(qualitySpinner, new LinearLayout.LayoutParams(-1, dp(48)));
-
-        addSpace(card, 14);
-        downloadButton = actionButton("DOWNLOAD VIDEO", true);
-        card.addView(downloadButton, new LinearLayout.LayoutParams(-1, dp(52)));
-        downloadButton.setOnClickListener(v -> requestDownload());
-
-        addSpace(contentContainer, 18);
-        LinearLayout platformCard = new LinearLayout(this);
-        platformCard.setOrientation(LinearLayout.VERTICAL);
-        platformCard.setPadding(dp(16), dp(16), dp(16), dp(16));
-        platformCard.setBackground(rounded(Color.rgb(21, 29, 49), 16));
-        contentContainer.addView(platformCard, new LinearLayout.LayoutParams(-1, -2));
-        platformCard.addView(label("SUPPORTED PLATFORMS", 12, Color.rgb(160, 174, 201), true));
-        addSpace(platformCard, 8);
-        platformCard.addView(label("TikTok  •  Instagram  •  Facebook  •  YouTube", 14, Color.WHITE, true));
-
-        addSpace(contentContainer, 16);
-        status = label(engineReady ? "Downloader ready. Paste a link to begin." : "Downloader engine could not start. Check your connection and reinstall the latest build.", 13, Color.rgb(190, 199, 219), false);
-        status.setPadding(dp(14), dp(14), dp(14), dp(14));
-        status.setBackground(rounded(Color.rgb(26, 34, 57), 12));
-        contentContainer.addView(status, new LinearLayout.LayoutParams(-1, -2));
-
-        addSpace(contentContainer, 14);
-        contentContainer.addView(label("Only download content you own or have permission to save. Availability depends on each service's rules and technical restrictions.", 12, Color.rgb(145, 157, 180), false));
-        if (getIntent() != null) {
-            String shared = getIntent().getStringExtra(Intent.EXTRA_TEXT);
-            if (shared != null && !shared.trim().isEmpty()) linkInput.setText(shared.trim());
-        }
+    private void addPlatformTile(LinearLayout parent,String symbol,String name,String subtitle,int accent) {
+        LinearLayout tile=new LinearLayout(this); tile.setGravity(Gravity.CENTER_VERTICAL); tile.setPadding(dp(14),dp(12),dp(14),dp(12)); tile.setBackground(rounded(Color.rgb(24,29,51),18));
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,dp(76)); p.bottomMargin=dp(10); parent.addView(tile,p);
+        TextView icon=label(symbol,27,accent,true); icon.setGravity(Gravity.CENTER); icon.setBackground(rounded(Color.rgb(39,39,70),15)); tile.addView(icon,new LinearLayout.LayoutParams(dp(50),dp(50)));
+        LinearLayout textBox=new LinearLayout(this); textBox.setOrientation(LinearLayout.VERTICAL); textBox.setPadding(dp(13),0,dp(5),0);
+        textBox.addView(label(name,16,Color.WHITE,true)); addSpace(textBox,3); textBox.addView(label(subtitle,11,Color.rgb(164,175,202),false));
+        tile.addView(textBox,new LinearLayout.LayoutParams(0,-2,1f)); tile.addView(label("›",29,Color.rgb(116,244,221),true)); tile.setOnClickListener(v->showPlatformScreen(name));
     }
+
+    private void showPlatformScreen(String platform) {
+        selectedPlatform=platform;
+        LinearLayout root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(Color.rgb(10,13,27));
+        ScrollView scroll=new ScrollView(this); LinearLayout page=new LinearLayout(this); page.setOrientation(LinearLayout.VERTICAL); page.setPadding(dp(20),dp(22),dp(20),dp(22)); scroll.addView(page); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1f));
+        Button back=actionButton("‹   BACK TO PLATFORMS",false); page.addView(back,new LinearLayout.LayoutParams(-1,dp(44))); back.setOnClickListener(v->buildInterface());
+        addSpace(page,22); page.addView(label(platform+" downloader",25,Color.WHITE,true)); addSpace(page,7);
+        page.addView(label("Paste a link below to prepare your download.",14,Color.rgb(177,187,211),false)); addSpace(page,18);
+        LinearLayout card=new LinearLayout(this); card.setOrientation(LinearLayout.VERTICAL); card.setPadding(dp(17),dp(18),dp(17),dp(18)); card.setBackground(rounded(Color.rgb(24,29,51),20)); page.addView(card);
+        card.addView(label("VIDEO LINK",12,Color.rgb(165,176,205),true)); addSpace(card,8);
+        linkInput=new EditText(this); linkInput.setMinLines(3); linkInput.setTextSize(15); linkInput.setHint("Paste your "+platform+" link here…"); linkInput.setHintTextColor(Color.rgb(125,139,168)); linkInput.setTextColor(Color.WHITE); linkInput.setPadding(dp(14),dp(13),dp(14),dp(13)); linkInput.setBackground(rounded(Color.rgb(12,18,36),13)); card.addView(linkInput,new LinearLayout.LayoutParams(-1,-2));
+        addSpace(card,10); LinearLayout tools=new LinearLayout(this); Button paste=actionButton("▣  PASTE",true),clear=actionButton("✕  CLEAR",false);
+        tools.addView(paste,new LinearLayout.LayoutParams(0,dp(46),1f)); LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(46),1f); cp.leftMargin=dp(9); tools.addView(clear,cp); card.addView(tools);
+        paste.setOnClickListener(v->pasteClipboardLink()); clear.setOnClickListener(v->linkInput.setText(""));
+        addSpace(card,17); card.addView(label("DOWNLOAD QUALITY",12,Color.rgb(165,176,205),true)); addSpace(card,6);
+        qualitySpinner=new Spinner(this); String[] choices={"Best available","1080p (Full HD)","720p (HD)","480p (SD)","360p (Low data)"};
+        ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item,choices) {
+            @Override public View getView(int pos,View cv,android.view.ViewGroup par){ TextView t=(TextView)super.getView(pos,cv,par); t.setTextColor(Color.WHITE); t.setPadding(dp(12),dp(9),dp(12),dp(9)); return t; }
+            @Override public View getDropDownView(int pos,View cv,android.view.ViewGroup par){ TextView t=(TextView)super.getDropDownView(pos,cv,par); t.setTextColor(Color.WHITE); t.setBackgroundColor(Color.rgb(24,29,51)); return t; }
+        }; adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item); qualitySpinner.setAdapter(adapter); card.addView(qualitySpinner,new LinearLayout.LayoutParams(-1,dp(48)));
+        addSpace(card,15); downloadButton=actionButton("↓   DOWNLOAD VIDEO",true); card.addView(downloadButton,new LinearLayout.LayoutParams(-1,dp(53))); downloadButton.setOnClickListener(v->requestDownload());
+        addSpace(page,14); status=label(engineReady?"Downloader ready. Only download content you own or have permission to save.":"Downloader engine could not start. Check your connection.",13,Color.rgb(185,196,219),false);
+        status.setPadding(dp(14),dp(14),dp(14),dp(14)); status.setBackground(rounded(Color.rgb(24,29,51),13)); page.addView(status);
+        AdView ad=new AdView(this); ad.setAdUnitId(BANNER_ID); ad.setAdSize(AdSize.BANNER); root.addView(ad,new LinearLayout.LayoutParams(-1,-2)); setContentView(root); if(adsInitialized) ad.loadAd(new AdRequest.Builder().build());
+    }
+
+    private void pasteClipboardLink() {
+        try {
+            android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+            if(cm!=null&&cm.hasPrimaryClip()){ android.content.ClipData data=cm.getPrimaryClip(); if(data!=null&&data.getItemCount()>0){ CharSequence value=data.getItemAt(0).coerceToText(this); if(value!=null){ linkInput.setText(value.toString().trim()); linkInput.setSelection(linkInput.length()); return; } } }
+            Toast.makeText(this,"Your clipboard is empty.",Toast.LENGTH_SHORT).show();
+        } catch(Exception e){ Toast.makeText(this,"Could not read the clipboard.",Toast.LENGTH_SHORT).show(); }
+    }
+
+    private void showDownloader() { buildInterface(); }
 
     private void showDownloads() {
         if (contentContainer == null) return;
