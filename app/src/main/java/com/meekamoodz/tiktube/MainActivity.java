@@ -201,7 +201,42 @@ public class MainActivity extends Activity {
         TextView icon=label(symbol,27,accent,true); icon.setGravity(Gravity.CENTER); icon.setBackground(rounded(Color.rgb(39,39,70),15)); tile.addView(icon,new LinearLayout.LayoutParams(dp(50),dp(50)));
         LinearLayout textBox=new LinearLayout(this); textBox.setOrientation(LinearLayout.VERTICAL); textBox.setPadding(dp(13),0,dp(5),0);
         textBox.addView(label(name,16,Color.WHITE,true)); addSpace(textBox,3); textBox.addView(label(subtitle,11,Color.rgb(164,175,202),false));
-        tile.addView(textBox,new LinearLayout.LayoutParams(0,-2,1f)); tile.addView(label("›",29,Color.rgb(116,244,221),true)); tile.setOnClickListener(v->showPlatformScreen(name));
+        tile.addView(textBox,new LinearLayout.LayoutParams(0,-2,1f)); tile.addView(label("›",29,Color.rgb(116,244,221),true)); tile.setOnClickListener(v->openPlatformScreenWithAd(name));
+    }
+
+    private void openPlatformScreenWithAd(String platform) {
+        SharedPreferences prefs = getSharedPreferences("tiktube_ads", MODE_PRIVATE);
+        int actions = prefs.getInt("platform_navigation_actions", 0) + 1;
+        prefs.edit().putInt("platform_navigation_actions", actions).apply();
+
+        // Keep interstitial frequency conservative: show on every second platform-entry action.
+        if (actions % 2 != 0 || !adsInitialized || interstitialAd == null) {
+            showPlatformScreen(platform);
+            if (adsInitialized && interstitialAd == null) loadInterstitial();
+            return;
+        }
+
+        InterstitialAd ad = interstitialAd;
+        interstitialAd = null;
+        ad.setFullScreenContentCallback(new FullScreenContentCallback() {
+            @Override
+            public void onAdDismissedFullScreenContent() {
+                showPlatformScreen(platform);
+                loadInterstitial();
+            }
+
+            @Override
+            public void onAdFailedToShowFullScreenContent(@NonNull AdError error) {
+                showPlatformScreen(platform);
+                loadInterstitial();
+            }
+        });
+        try {
+            ad.show(this);
+        } catch (Exception e) {
+            showPlatformScreen(platform);
+            loadInterstitial();
+        }
     }
 
     private void showPlatformScreen(String platform) {
