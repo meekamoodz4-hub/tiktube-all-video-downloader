@@ -73,6 +73,7 @@ public class MainActivity extends Activity {
     private InterstitialAd interstitialAd;
     private AppOpenAd appOpenAd;
     private boolean engineReady = false;
+    private boolean updatingDownloader = false;
     private boolean adsInitialized = false;
     private boolean downloading = false;
     private boolean waitingForInterstitial = false;
@@ -191,6 +192,7 @@ public class MainActivity extends Activity {
         addPlatformTile(page,"◎","Instagram","Reels and public media where permitted",Color.rgb(221,119,226));
         addPlatformTile(page,"f","Facebook","Public videos where permitted",Color.rgb(91,153,255));
         addSpace(page,12); Button library=actionButton("▣   MY DOWNLOADS",false); page.addView(library,new LinearLayout.LayoutParams(-1,dp(50))); library.setOnClickListener(v->showDownloads());
+        addSpace(page,9); Button updateEngine=actionButton("↻   UPDATE DOWNLOADER",false); page.addView(updateEngine,new LinearLayout.LayoutParams(-1,dp(46))); updateEngine.setOnClickListener(v->updateDownloaderEngine());
         addSpace(page,9); Button privacy=actionButton("PRIVACY POLICY",false); page.addView(privacy,new LinearLayout.LayoutParams(-1,dp(44))); privacy.setOnClickListener(v->openPrivacyPolicy());
         bannerAdView=new AdView(this); bannerAdView.setAdUnitId(BANNER_ID); bannerAdView.setAdSize(AdSize.BANNER); root.addView(bannerAdView,new LinearLayout.LayoutParams(-1,-2)); setContentView(root);
     }
@@ -648,6 +650,42 @@ public class MainActivity extends Activity {
             appOpenShowing = false;
             loadAppOpenAd();
         }
+    }
+
+    private void updateDownloaderEngine() {
+        if (!engineReady) {
+            Toast.makeText(this, "Downloader is not ready. Please restart the app and try again.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (updatingDownloader || downloading) {
+            Toast.makeText(this, "Please wait until the current operation finishes.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        updatingDownloader = true;
+        Toast.makeText(this, "Checking for the latest stable downloader update…", Toast.LENGTH_LONG).show();
+        new Thread(() -> {
+            try {
+                YoutubeDL.UpdateStatus result = YoutubeDL.getInstance().updateYoutubeDL(
+                        getApplicationContext(), YoutubeDL.UpdateChannel._STABLE);
+                String installedVersion = YoutubeDL.getInstance().versionName(getApplicationContext());
+                runOnUiThread(() -> {
+                    updatingDownloader = false;
+                    if (result == YoutubeDL.UpdateStatus.DONE) {
+                        Toast.makeText(this, "Downloader updated successfully: " + installedVersion, Toast.LENGTH_LONG).show();
+                    } else if (result == YoutubeDL.UpdateStatus.ALREADY_UP_TO_DATE) {
+                        Toast.makeText(this, "Downloader is already up to date: " + installedVersion, Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(this, "Downloader update status: " + result, Toast.LENGTH_LONG).show();
+                    }
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    updatingDownloader = false;
+                    String detail = e.getMessage() == null ? "Please check your internet connection and try again." : e.getMessage();
+                    Toast.makeText(this, "Could not update downloader: " + detail, Toast.LENGTH_LONG).show();
+                });
+            }
+        }, "Tiktube-Downloader-Update").start();
     }
 
     private void openPrivacyPolicy() {
