@@ -1,4 +1,4 @@
-name: Android Build (APK and Play Store Bundle)
+name: Android Build (APK and Signed Play Store Bundle)
 
 on:
   push:
@@ -31,11 +31,35 @@ jobs:
         with:
           packages: platform-tools platforms;android-36 build-tools;36.0.0
 
+      - name: Prepare upload signing key
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANDROID_KEYSTORE_BASE64}" ]; then
+            echo "Missing GitHub secret: ANDROID_KEYSTORE_BASE64"
+            exit 1
+          fi
+          KEYSTORE_PATH="$RUNNER_TEMP/tiktube-upload-key.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH"
+          chmod 600 "$KEYSTORE_PATH"
+          echo "ANDROID_KEYSTORE_FILE=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
       - name: Build debug APK for phone testing
         run: gradle assembleDebug
 
-      - name: Build release App Bundle (unsigned)
-        run: gradle bundleRelease
+      - name: Build signed release App Bundle
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+          gradle bundleRelease
 
       - name: Upload APK for phone testing
         uses: actions/upload-artifact@v4
@@ -44,9 +68,9 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-      - name: Upload App Bundle for Google Play
+      - name: Upload signed App Bundle for Google Play
         uses: actions/upload-artifact@v4
         with:
-          name: tiktube-aab-for-play-store
+          name: tiktube-signed-aab-for-play-store
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
