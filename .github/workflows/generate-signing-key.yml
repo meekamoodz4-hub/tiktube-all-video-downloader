@@ -1,0 +1,42 @@
+name: Generate Tiktube Signing Key
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate upload key and protected handoff files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p signing
+          STORE_PASS="$(openssl rand -hex 24)"
+          KEY_PASS="$(openssl rand -hex 24)"
+          keytool -genkeypair -noprompt \
+            -keystore signing/tiktube-upload.jks \
+            -storetype JKS \
+            -alias tiktube \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass "$STORE_PASS" \
+            -keypass "$KEY_PASS" \
+            -dname "CN=DropTech Developers, OU=Apps, O=DropTech Developers, L=Durban, ST=KwaZulu-Natal, C=ZA"
+          base64 -w 0 signing/tiktube-upload.jks > signing/ANDROID_KEYSTORE_BASE64.txt
+          {
+            printf 'ANDROID_KEYSTORE_PASSWORD=%s\n' "$STORE_PASS"
+            printf 'ANDROID_KEY_ALIAS=tiktube\n'
+            printf 'ANDROID_KEY_PASSWORD=%s\n' "$KEY_PASS"
+          } > signing/signing-passwords.txt
+          chmod 600 signing/*
+      - name: Upload private signing handoff
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiktube-signing-files
+          path: signing/
+          retention-days: 1
